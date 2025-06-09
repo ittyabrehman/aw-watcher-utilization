@@ -1,4 +1,4 @@
-name: Create Release & Upload Binaries
+name: Create releases for Linux, Windows and MacOS & Test
 
 on:
   push:
@@ -7,17 +7,17 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-release:
-    runs-on: ${{ matrix.os }}
+  build-release:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.11]
         poetry-version: [1.3.2]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout code
+      - name: Check out code
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -35,17 +35,20 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Build single-file executable
-        run: pyinstaller --onefile main.py
+        run: |
+          # Point PyInstaller at your watcher entrypoint and name the binary:
+          pyinstaller --onefile --clean \
+            aw_watcher_utilization/watcher.py \
+            --name aw-watcher-utilization
 
-      # ───────────────────────────────────────────────────────────────────
       - name: Create or update GitHub Release
         id: release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          tag_name: "build-${{ github.sha }}"
-          release_name: "Build ${{ github.sha }}"
+          tag_name: build-${{ github.sha }}
+          release_name: Build ${{ github.sha }}
           body: |
             Automated build artifacts for commit ${{ github.sha }}.
           draft: false
