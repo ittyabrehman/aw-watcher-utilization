@@ -37,23 +37,25 @@ jobs:
       - name: Build executable
         run: pyinstaller --clean pyinstaller.spec
 
-      # ────────────────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          token: ${{ secrets.TOKEN }}
           tag_name: "build-${{ github.sha }}"
           release_name: "Build ${{ github.sha }}"
-          draft: false
-          prerelease: false
           body: |
             Automated build artifacts for commit ${{ github.sha }}.
-      
+          draft: false
+          prerelease: false
+
       - name: Upload Linux binary
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          token: ${{ secrets.TOKEN }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/aw-watcher-utilization-linux
           asset_name: aw-watcher-utilization-linux
@@ -61,8 +63,9 @@ jobs:
 
       - name: Upload Windows binary
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          token: ${{ secrets.TOKEN }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/aw-watcher-utilization-windows.exe
           asset_name: aw-watcher-utilization-windows.exe
@@ -70,8 +73,9 @@ jobs:
 
       - name: Upload macOS binary
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          token: ${{ secrets.TOKEN }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/aw-watcher-utilization-macos
           asset_name: aw-watcher-utilization-macos
