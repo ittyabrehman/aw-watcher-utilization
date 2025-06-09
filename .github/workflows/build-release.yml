@@ -7,13 +7,13 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-package:
+  build-release:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.11]
         poetry-version: [1.3.2]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -40,85 +40,23 @@ jobs:
             aw_watcher_utilization/watcher.py \
             --name aw-watcher-utilization
 
-      - name: Package binary
+      - name: Package artifact
+        shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             tar czf aw-watcher-utilization-linux.tar.gz -C dist aw-watcher-utilization
+            echo "ARTIFACT=aw-watcher-utilization-linux.tar.gz" >> $GITHUB_ENV
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             tar czf aw-watcher-utilization-macos.tar.gz -C dist aw-watcher-utilization
+            echo "ARTIFACT=aw-watcher-utilization-macos.tar.gz" >> $GITHUB_ENV
           else
-            powershell -Command "Compress-Archive dist\\aw-watcher-utilization.exe aw-watcher-utilization-windows.zip"
+            # Windows
+            powershell -Command "Compress-Archive -Path dist\\aw-watcher-utilization.exe -DestinationPath aw-watcher-utilization-windows.zip"
+            echo "ARTIFACT=aw-watcher-utilization-windows.zip" >> $GITHUB_ENV
           fi
 
-      # upload the packaged file as a workflow artifact so we can grab it later
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: packaged-${{ runner.os }}
-          path: |
-            aw-watcher-utilization-*.tar.gz
-            aw-watcher-utilization-*.zip
-
-  release:
-    needs: build-and-package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Linux package
-        if: needs.build-and-package.outputs['build-and-package.matrix.os'] == 'ubuntu-latest'
-        uses: actions/download-artifact@v3
-        with:
-          name: packaged-ubuntu-latest
-
-      - name: Download macOS package
-        if: needs.build-and-package.outputs['build-and-package.matrix.os'] == 'macos-latest'
-        uses: actions/download-artifact@v3
-        with:
-          name: packaged-macos-latest
-
-      - name: Download Windows package
-        if: needs.build-and-package.outputs['build-and-package.matrix.os'] == 'windows-latest'
-        uses: actions/download-artifact@v3
-        with:
-          name: packaged-windows-latest
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          tag_name: build-${{ github.sha }}
-          release_name: Build ${{ github.sha }}
-          body: Automated build artifacts for commit ${{ github.sha }}.
-          draft: false
-          prerelease: false
-
-      - name: Upload Linux asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: aw-watcher-utilization-linux.tar.gz
-          asset_name: aw-watcher-utilization-linux.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload macOS asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: aw-watcher-utilization-macos.tar.gz
-          asset_name: aw-watcher-utilization-macos.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Windows asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: aw-watcher-utilization-windows.zip
-          asset_name: aw-watcher-utilization-windows.zip
-          asset_content_type: application/zip
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
