@@ -35,7 +35,7 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Build single-file executable
-        run: pyinstaller --onefile --clean pyinstaller.spec
+        run: pyinstaller --onefile main.py
 
       # ───────────────────────────────────────────────────────────────────
       - name: Create or update GitHub Release
