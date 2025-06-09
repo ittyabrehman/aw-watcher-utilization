@@ -15,11 +15,24 @@ logger = logging.getLogger(__name__)
 
 
 class UtilizationWatcher:
-    def __init__(self, testing=False):
+    def __init__(
+        self,
+        testing: bool = False,
+        host: str = None,
+        port: int = None,
+    ):        
         config_section = "aw-watcher-utilization" if not testing else "aw-watcher-utilization-testing"
         self.settings = Settings(watcher_config[config_section])
 
-        self.client = ActivityWatchClient("aw-watcher-utilization", testing=testing)
+        aw_host = host or getattr(self.settings, "server_host", None)
+        aw_port = port or getattr(self.settings, "server_port", None)
+
+        self.client = ActivityWatchClient(
+            client_name="aw-watcher-utilization",
+            testing=testing,
+            host=aw_host,
+            port=aw_port,
+        )
         self.bucket_id = "{}_{}".format(self.client.client_name, self.client.client_hostname)
 
     def run(self):

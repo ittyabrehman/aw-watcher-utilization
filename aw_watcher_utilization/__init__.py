@@ -12,6 +12,11 @@ def main() -> None:
                         help='run with verbose logging')
     parser.add_argument("--testing", action="store_true",
                         help='run in testing mode')
+    parser.add_argument("--host", dest="aw_host", default=None,
+        help="ActivityWatch server hostname (overrides config)")
+    parser.add_argument("--port", dest="aw_port", type=int, default=None,
+        help="ActivityWatch server port (overrides config)")
+
     args = parser.parse_args()
 
     # Set up logging
@@ -20,7 +25,11 @@ def main() -> None:
                   log_stderr=True, log_file=True)
 
     # Start watcher
-    watcher = UtilizationWatcher(testing=args.testing)
+    watcher = UtilizationWatcher(
+        testing=args.testing,
+        host=args.aw_host,
+        port=args.aw_port,
+    )
     watcher.run()
 
 
